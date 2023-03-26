@@ -9,25 +9,22 @@ import { useForm } from "react-hook-form";
 import { Stack } from "@chakra-ui/react";
 import { api } from "../utils/api";
 
-export const postValidationSchema = Yup.object({
-    title: Yup.string().required().min(3).max(100),
+export const commentValidationSchema = Yup.object({
     content: Yup.string().required().max(280),
+    postId: Yup.string().required(),
 });
 
-type PostFormValues = Yup.InferType<typeof postValidationSchema>;
+type CommentFormValues = Yup.InferType<typeof commentValidationSchema>;
 
-export const PostForm = () => {
-    const { mutate } = api.post.createPost.useMutation();
+export const CommentForm = ({ postId }: { postId: string }) => {
+    const { mutate } = api.post.createComment.useMutation();
 
-    const { control, handleSubmit } = useForm<PostFormValues>({
-        defaultValues: {
-            title: "",
-            content: "",
-        },
-        resolver: yupResolver(postValidationSchema),
+    const { control, handleSubmit } = useForm<CommentFormValues>({
+        defaultValues: { content: "", postId },
+        resolver: yupResolver(commentValidationSchema),
     });
 
-    const onSubmit = (values: PostFormValues) => {
+    const onSubmit = (values: CommentFormValues) => {
         mutate(values);
     };
 
@@ -39,17 +36,10 @@ export const PostForm = () => {
             }}
         >
             <Stack spacing={4}>
-                <InputControl
-                    control={control}
-                    name="title"
-                    label="Post title"
-                    inputProps={{ placeholder: "post title" }}
-                />
                 <TextareaControl
                     control={control}
                     name="content"
-                    label="Content"
-                    textareaProps={{ placeholder: "How was your day?" }}
+                    textareaProps={{ placeholder: "Your comment" }}
                 />
 
                 <SubmitButton control={control}>submit</SubmitButton>
