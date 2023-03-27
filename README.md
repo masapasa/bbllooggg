@@ -6,3 +6,4 @@
 - tRPC
 - Prisma
 - Supabase (with oAuth)
+- ChakraUI
