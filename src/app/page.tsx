@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner, Text } from "@chakra-ui/react";
+import { Spinner, Stack, Text } from "@chakra-ui/react";
 import { PostForm } from "~/components/PostForm";
 import { PostList } from "~/components/PostList";
 import { WithPrivateRoute } from "~/components/withPrivateRoute";
@@ -15,6 +15,7 @@ const Posts = () => {
                 Create a post
             </Text>
             <PostForm />
+
             {isLoading && <Spinner />}
             {data && <PostList posts={data} />}
         </>

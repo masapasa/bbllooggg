@@ -10,6 +10,8 @@ import Image from "next/image";
 import { WithPrivateRoute } from "~/components/withPrivateRoute";
 import { uploadFile } from "~/server/api/utils";
 import { useToast } from "@chakra-ui/react";
+import { useCallback, useEffect } from "react";
+import { redirect } from "next/navigation";
 
 export const profileValidationSchema = Yup.object({
     username: Yup.string().required().min(3).max(280),
@@ -19,8 +21,22 @@ type ProfileFormValues = Yup.InferType<typeof profileValidationSchema>;
 
 const ProfileFormBase = () => {
     const userId = useUser().user?.id;
-    const { mutate } = api.user.updateProfile.useMutation();
+    const { mutateAsync } = api.user.updateProfile.useMutation({
+        onSuccess: () => {
+            redirect("/");
+        },
+        onError: () => {
+            openErrorToast();
+
+            // TODO: dodaj on Success i on Error i on Submit close w comment modalu
+        },
+    });
+
     const toast = useToast();
+
+    const openErrorToast = () => {
+        toast({ title: "Error setting up profile", status: "error" });
+    };
 
     const defaultImage = {
         lastModified: new Date().getTime(),
@@ -43,20 +59,18 @@ const ProfileFormBase = () => {
         },
     });
 
-    const { control, handleSubmit, formState } = useForm<ProfileFormValues>({
+    const { control, handleSubmit } = useForm<ProfileFormValues>({
         defaultValues: {
             username: "",
         },
         resolver: yupResolver(profileValidationSchema),
     });
 
-    console.log("formstate", formState);
-    console.log("filesContent", filesContent);
     console.log("errors", errors);
 
     const onSubmit = async (values: ProfileFormValues) => {
         if (!userId) {
-            toast({ title: "Error setting up profile", status: "error" });
+            openErrorToast();
             return;
         }
 
@@ -66,11 +80,11 @@ const ProfileFormBase = () => {
         );
 
         if (error) {
-            toast({ title: "Error setting up profile", status: "error" });
+            openErrorToast();
             return;
         }
 
-        mutate({ ...values, avatar_url: url });
+        void mutateAsync({ ...values, avatar_url: url });
     };
 
     return (
@@ -79,43 +93,50 @@ const ProfileFormBase = () => {
                 Set up your profile
             </Text>
 
-            <Stack spacing={4}>
-                <InputControl
-                    control={control}
-                    name="username"
-                    label="username"
-                    inputProps={{ placeholder: "username" }}
-                />
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleSubmit(onSubmit)(e);
+                }}
+            >
+                <Stack spacing={4}>
+                    <InputControl
+                        control={control}
+                        name="username"
+                        label="username"
+                        inputProps={{ placeholder: "username" }}
+                    />
 
-                <Button onClick={() => openFileSelector()}>
-                    Upload avatar
-                </Button>
+                    <Button onClick={() => openFileSelector()}>
+                        Upload avatar
+                    </Button>
 
-                {filesContent.map((file, index) => (
-                    <Stack
-                        key={index}
-                        w={"100%"}
-                        border={"1px"}
-                        borderRadius="8"
-                        padding={4}
-                        alignItems="center"
-                        justifyContent={"center"}
-                        spacing={4}
-                        borderColor="gray.600"
-                    >
-                        <Text>choosed: {file.name}</Text>
-                        <Image
-                            alt={file.name}
-                            src={file.content}
-                            width={400}
-                            height={400}
-                        />
-                        <br />
-                    </Stack>
-                ))}
+                    {filesContent.map((file, index) => (
+                        <Stack
+                            key={index}
+                            w={"100%"}
+                            border={"1px"}
+                            borderRadius="8"
+                            padding={4}
+                            alignItems="center"
+                            justifyContent={"center"}
+                            spacing={4}
+                            borderColor="gray.600"
+                        >
+                            <Text>choosed: {file.name}</Text>
+                            <Image
+                                alt={file.name}
+                                src={file.content}
+                                width={400}
+                                height={400}
+                            />
+                            <br />
+                        </Stack>
+                    ))}
 
-                <SubmitButton control={control}>submit</SubmitButton>
-            </Stack>
+                    <SubmitButton control={control}>submit</SubmitButton>
+                </Stack>
+            </form>
         </Stack>
     );
 };

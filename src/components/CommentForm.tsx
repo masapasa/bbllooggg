@@ -6,7 +6,7 @@ import {
     TextareaControl,
 } from "chakra-ui-react-hook-form";
 import { useForm } from "react-hook-form";
-import { Stack } from "@chakra-ui/react";
+import { Stack, useToast } from "@chakra-ui/react";
 import { api } from "../utils/api";
 
 export const commentValidationSchema = Yup.object({
@@ -16,8 +16,24 @@ export const commentValidationSchema = Yup.object({
 
 type CommentFormValues = Yup.InferType<typeof commentValidationSchema>;
 
-export const CommentForm = ({ postId }: { postId: string }) => {
-    const { mutate } = api.post.createComment.useMutation();
+export const CommentForm = ({
+    postId,
+    handleModalClose,
+}: {
+    postId: string;
+    handleModalClose: () => void;
+}) => {
+    const toast = useToast();
+    const utils = api.useContext();
+    const { mutateAsync } = api.post.createComment.useMutation({
+        onSuccess: () => {
+            void utils.post.getPosts.invalidate();
+            handleModalClose();
+        },
+        onError: () => {
+            toast({ title: "Error commenting", status: "error" });
+        },
+    });
 
     const { control, handleSubmit } = useForm<CommentFormValues>({
         defaultValues: { content: "", postId },
@@ -25,7 +41,7 @@ export const CommentForm = ({ postId }: { postId: string }) => {
     });
 
     const onSubmit = (values: CommentFormValues) => {
-        mutate(values);
+        void mutateAsync(values);
     };
 
     return (

@@ -6,7 +6,7 @@ import {
     TextareaControl,
 } from "chakra-ui-react-hook-form";
 import { useForm } from "react-hook-form";
-import { Stack } from "@chakra-ui/react";
+import { Spacer, Stack, useToast } from "@chakra-ui/react";
 import { api } from "../utils/api";
 
 export const postValidationSchema = Yup.object({
@@ -17,7 +17,19 @@ export const postValidationSchema = Yup.object({
 type PostFormValues = Yup.InferType<typeof postValidationSchema>;
 
 export const PostForm = () => {
-    const { mutate } = api.post.createPost.useMutation();
+    const toast = useToast();
+    const utils = api.useContext();
+    const { mutateAsync } = api.post.createPost.useMutation({
+        onSuccess: () => {
+            void utils.post.getPosts.invalidate();
+        },
+        onError: () => {
+            toast({
+                title: "Error adding post",
+                status: "error",
+            });
+        },
+    });
 
     const { control, handleSubmit } = useForm<PostFormValues>({
         defaultValues: {
@@ -28,7 +40,7 @@ export const PostForm = () => {
     });
 
     const onSubmit = (values: PostFormValues) => {
-        mutate(values);
+        void mutateAsync(values);
     };
 
     return (
@@ -53,6 +65,7 @@ export const PostForm = () => {
                 />
 
                 <SubmitButton control={control}>submit</SubmitButton>
+                <Spacer />
             </Stack>
         </form>
     );
