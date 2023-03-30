@@ -9,7 +9,7 @@ export function LogIn() {
         await supabase.auth.signInWithOAuth({
             provider: "github",
             options: {
-                redirectTo: "http://localhost:3000/login/set-profile",
+                redirectTo: "/login/set-profile",
             },
         });
     }
