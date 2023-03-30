@@ -6,14 +6,12 @@ import { supabase } from "~/utils/supabase-client";
 
 export function LogIn() {
     async function signInWithGitHub() {
-        const { data } = await supabase.auth.signInWithOAuth({
+        await supabase.auth.signInWithOAuth({
             provider: "github",
             options: {
                 redirectTo: "http://localhost:3000/login/set-profile",
             },
         });
-
-        console.log(data);
     }
 
     return (

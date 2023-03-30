@@ -32,6 +32,7 @@
         "react-dom": "18.2.0",
         "react-hook-form": "^7.43.8",
         "superjson": "1.12.2",
+        "use-file-picker": "^1.5.2",
         "yup": "^1.0.2",
         "zod": "^3.21.4"
     },

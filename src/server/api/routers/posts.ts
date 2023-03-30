@@ -5,13 +5,6 @@ import { postValidationSchema } from "~/components/PostForm";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const postRouter = createTRPCRouter({
-    hello: publicProcedure
-        .input(z.object({ text: z.string() }))
-        .query(({ input }) => {
-            return {
-                greeting: `Hello ${input.text}`,
-            };
-        }),
     createPost: publicProcedure
         .input(postValidationSchema)
         .mutation(async ({ input, ctx }) => {

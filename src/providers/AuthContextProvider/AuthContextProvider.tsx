@@ -14,7 +14,11 @@ export const AuthContext = createContext<{
     isLoading: true,
 });
 
-export const AuthContextProvider = (props: any) => {
+export const AuthContextProvider = ({
+    children,
+}: {
+    children: React.ReactNode;
+}) => {
     const [userSession, setUserSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +32,6 @@ export const AuthContextProvider = (props: any) => {
 
         const { data: authListener } = supabase.auth.onAuthStateChange(
             (event, session) => {
-                console.log(`Supabase auth event: ${event}`);
                 setUserSession(session);
                 setUser(session?.user ?? null);
                 setIsLoading(false);
@@ -41,11 +44,14 @@ export const AuthContextProvider = (props: any) => {
     }, []);
 
     const value = {
-        userSession,
+        session: userSession,
         user,
         isLoading,
     };
-    return <AuthContext.Provider value={value} {...props} />;
+
+    return (
+        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    );
 };
 
 export const useUser = () => {

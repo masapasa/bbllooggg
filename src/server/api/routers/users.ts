@@ -1,23 +1,32 @@
-import { z } from "zod";
+import * as Yup from "yup";
 import { profileValidationSchema } from "~/pageComponents/ProfileForm";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 
 export const userRouter = createTRPCRouter({
-    hello: publicProcedure
-        .input(z.object({ text: z.string() }))
-        .query(({ input }) => {
-            return {
-                greeting: `Hello ${input.text}`,
-            };
-        }),
-    createProfile: publicProcedure
-        .input(profileValidationSchema)
+    getProfile: privateProcedure.query(async ({ ctx }) => {
+        return await ctx.prisma.profiles.findUnique({
+            where: {
+                id: ctx.user.id,
+            },
+        });
+    }),
+    updateProfile: privateProcedure
+        .input(
+            profileValidationSchema.concat(
+                Yup.object({
+                    avatar_url: Yup.string().required(),
+                })
+            )
+        )
         .mutation(async ({ input, ctx }) => {
-            await ctx.prisma.profiles.create({
+            await ctx.prisma.profiles.update({
                 data: {
-                    id: input.userId,
                     username: input.username,
+                    avatar_url: input.avatar_url,
+                },
+                where: {
+                    id: ctx.user.id,
                 },
             });
         }),

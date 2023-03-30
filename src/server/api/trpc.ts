@@ -31,9 +31,9 @@ type CreateContextOptions = Record<string, never>;
  * @see https://create.t3.gg/en/usage/trpc#-servertrpccontextts
  */
 const createInnerTRPCContext = (_opts: CreateContextOptions) => {
-  return {
-    prisma,
-  };
+    return {
+        prisma,
+    };
 };
 
 /**
@@ -42,8 +42,38 @@ const createInnerTRPCContext = (_opts: CreateContextOptions) => {
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContext = (_opts: CreateNextContextOptions) => {
-  return createInnerTRPCContext({});
+export const getServiceSupabase = () =>
+    createClient<Database>(
+        env.NEXT_PUBLIC_SUPABASE_PROJECT_URL,
+        env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        }
+    );
+
+export const getUserAsAdmin = async (token: string) => {
+    const { data, error } = await getServiceSupabase().auth.getUser(token);
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+};
+
+export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
+    const req = _opts.req;
+    const { user } = req.headers.authorization
+        ? await getUserAsAdmin(req.headers.authorization)
+        : { user: null };
+
+    return {
+        prisma,
+        user,
+    };
 };
 
 /**
@@ -53,22 +83,27 @@ export const createTRPCContext = (_opts: CreateNextContextOptions) => {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { env } from "~/env.mjs";
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "~/shared/types/supabase.types";
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
-      },
-    };
-  },
+    transformer: superjson,
+    errorFormatter({ shape, error }) {
+        return {
+            ...shape,
+            data: {
+                ...shape.data,
+                zodError:
+                    error.cause instanceof ZodError
+                        ? error.cause.flatten()
+                        : null,
+            },
+        };
+    },
 });
 
 /**
@@ -93,3 +128,19 @@ export const createTRPCRouter = t.router;
  * are logged in.
  */
 export const publicProcedure = t.procedure;
+
+const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+        throw new TRPCError({
+            code: "UNAUTHORIZED",
+        });
+    }
+
+    return next({
+        ctx: {
+            user: ctx.user,
+        },
+    });
+});
+
+export const privateProcedure = t.procedure.use(enforceUserIsAuthed);

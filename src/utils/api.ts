@@ -10,6 +10,7 @@ import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import superjson from "superjson";
 
 import { type AppRouter } from "~/server/api/root";
+import { supabase } from "./supabase-client";
 
 const getBaseUrl = () => {
     if (typeof window !== "undefined") return ""; // browser should use relative url
@@ -42,6 +43,12 @@ export const api = createTRPCNext<AppRouter>({
                 }),
                 httpBatchLink({
                     url: `${getBaseUrl()}/api/trpc`,
+                    async headers() {
+                        return {
+                            authorization: (await supabase.auth.getSession())
+                                .data.session?.access_token,
+                        };
+                    },
                 }),
             ],
         };
