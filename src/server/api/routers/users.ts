@@ -15,7 +15,7 @@ export const userRouter = createTRPCRouter({
         .input(
             profileValidationSchema.concat(
                 Yup.object({
-                    avatar_url: Yup.string().required(),
+                    avatar_url: Yup.string(),
                 })
             )
         )

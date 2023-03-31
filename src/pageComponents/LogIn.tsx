@@ -1,6 +1,8 @@
 import { Button, Center, Flex, Stack, Text } from "@chakra-ui/react";
 import { createClient } from "@supabase/supabase-js";
 import React from "react";
+import { env } from "~/env.mjs";
+import { api } from "~/utils/api";
 
 import { supabase } from "~/utils/supabase-client";
 
@@ -8,9 +10,6 @@ export function LogIn() {
     async function signInWithGitHub() {
         await supabase.auth.signInWithOAuth({
             provider: "github",
-            options: {
-                redirectTo: "/login/set-profile",
-            },
         });
     }
 

@@ -19,6 +19,7 @@ const client = z.object({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
     NEXT_PUBLIC_SUPABASE_PROJECT_URL: z.string().url(),
     NEXT_PUBLIC_SUPABASE_SERVICE_KEY: z.string(),
+    VERCEL_URL: z.string().optional(),
 });
 
 /**
@@ -38,6 +39,7 @@ const processEnv = {
         process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY,
 
     NODE_ENV: process.env.NODE_ENV,
+    VERCEL_URL: process.env.VERCEL_URL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
 };
 

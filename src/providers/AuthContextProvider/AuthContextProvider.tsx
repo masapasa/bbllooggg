@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
 import { supabase } from "~/utils/supabase-client";
+import { redirect } from "next/navigation";
 
 export const AuthContext = createContext<{
     user: User | null;

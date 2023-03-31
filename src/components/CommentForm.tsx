@@ -8,6 +8,7 @@ import {
 import { useForm } from "react-hook-form";
 import { Stack, useToast } from "@chakra-ui/react";
 import { api } from "../utils/api";
+import { supabase } from "~/utils/supabase-client";
 
 export const commentValidationSchema = Yup.object({
     content: Yup.string().required().max(280),
@@ -25,9 +26,10 @@ export const CommentForm = ({
 }) => {
     const toast = useToast();
     const utils = api.useContext();
-    const { mutateAsync } = api.post.createComment.useMutation({
+    const { mutateAsync, isLoading } = api.post.createComment.useMutation({
         onSuccess: () => {
             void utils.post.getPosts.invalidate();
+            void supabase.auth.refreshSession();
             handleModalClose();
         },
         onError: () => {
@@ -58,7 +60,9 @@ export const CommentForm = ({
                     textareaProps={{ placeholder: "Your comment" }}
                 />
 
-                <SubmitButton control={control}>submit</SubmitButton>
+                <SubmitButton control={control} isLoading={isLoading}>
+                    submit
+                </SubmitButton>
             </Stack>
         </form>
     );

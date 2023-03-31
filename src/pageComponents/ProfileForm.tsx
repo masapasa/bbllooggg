@@ -12,6 +12,8 @@ import { uploadFile } from "~/server/api/utils";
 import { useToast } from "@chakra-ui/react";
 import { useCallback, useEffect } from "react";
 import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { supabase } from "~/utils/supabase-client";
 
 export const profileValidationSchema = Yup.object({
     username: Yup.string().required().min(3).max(280),
@@ -20,15 +22,16 @@ export const profileValidationSchema = Yup.object({
 type ProfileFormValues = Yup.InferType<typeof profileValidationSchema>;
 
 const ProfileFormBase = () => {
+    const router = useRouter();
     const userId = useUser().user?.id;
-    const { mutateAsync } = api.user.updateProfile.useMutation({
-        onSuccess: () => {
-            redirect("/");
+    const utils = api.useContext();
+    const { mutateAsync, isLoading } = api.user.updateProfile.useMutation({
+        onSuccess: async () => {
+            await utils.user.getProfile.invalidate();
+            void router.push("/");
         },
         onError: () => {
             openErrorToast();
-
-            // TODO: dodaj on Success i on Error i on Submit close w comment modalu
         },
     });
 
@@ -38,26 +41,20 @@ const ProfileFormBase = () => {
         toast({ title: "Error setting up profile", status: "error" });
     };
 
-    const defaultImage = {
-        lastModified: new Date().getTime(),
-        name: "blankImage",
-        content:
-            "https://storage.needpix.com/thumbs/blank-profile-picture-973460_1280.png",
-    };
-
-    const [openFileSelector, { filesContent, errors }] = useFilePicker({
-        readAs: "DataURL",
-        accept: "image/*",
-        multiple: false,
-        limitFilesConfig: { max: 1 },
-        maxFileSize: 50,
-        imageSizeRestrictions: {
-            maxHeight: 1000,
-            maxWidth: 1000,
-            minHeight: 200,
-            minWidth: 200,
-        },
-    });
+    const [openFileSelector, { filesContent, plainFiles, errors }] =
+        useFilePicker({
+            readAs: "DataURL",
+            accept: "image/*",
+            multiple: false,
+            limitFilesConfig: { max: 1 },
+            maxFileSize: 50,
+            imageSizeRestrictions: {
+                maxHeight: 1000,
+                maxWidth: 1000,
+                minHeight: 200,
+                minWidth: 200,
+            },
+        });
 
     const { control, handleSubmit } = useForm<ProfileFormValues>({
         defaultValues: {
@@ -74,17 +71,22 @@ const ProfileFormBase = () => {
             return;
         }
 
-        const { error, url } = await uploadFile(
-            userId,
-            filesContent[0]?.content ?? defaultImage.content
-        );
+        let url = null;
 
-        if (error) {
-            openErrorToast();
-            return;
+        const file = plainFiles[0];
+
+        if (file) {
+            const { error, url: signedURL } = await uploadFile(userId, file);
+
+            if (error) {
+                openErrorToast();
+                return;
+            }
+
+            url = signedURL;
         }
 
-        void mutateAsync({ ...values, avatar_url: url });
+        void mutateAsync({ ...values, avatar_url: url ?? undefined });
     };
 
     return (
@@ -134,7 +136,9 @@ const ProfileFormBase = () => {
                         </Stack>
                     ))}
 
-                    <SubmitButton control={control}>submit</SubmitButton>
+                    <SubmitButton control={control} isLoading={isLoading}>
+                        submit
+                    </SubmitButton>
                 </Stack>
             </form>
         </Stack>

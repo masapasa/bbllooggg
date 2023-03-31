@@ -8,6 +8,7 @@ import {
 import { useForm } from "react-hook-form";
 import { Spacer, Stack, useToast } from "@chakra-ui/react";
 import { api } from "../utils/api";
+import { supabase } from "~/utils/supabase-client";
 
 export const postValidationSchema = Yup.object({
     title: Yup.string().required().min(3).max(100),
@@ -19,9 +20,10 @@ type PostFormValues = Yup.InferType<typeof postValidationSchema>;
 export const PostForm = () => {
     const toast = useToast();
     const utils = api.useContext();
-    const { mutateAsync } = api.post.createPost.useMutation({
+    const { mutateAsync, isLoading } = api.post.createPost.useMutation({
         onSuccess: () => {
             void utils.post.getPosts.invalidate();
+            void supabase.auth.refreshSession();
         },
         onError: () => {
             toast({
@@ -64,7 +66,9 @@ export const PostForm = () => {
                     textareaProps={{ placeholder: "How was your day?" }}
                 />
 
-                <SubmitButton control={control}>submit</SubmitButton>
+                <SubmitButton control={control} isLoading={isLoading}>
+                    submit
+                </SubmitButton>
                 <Spacer />
             </Stack>
         </form>

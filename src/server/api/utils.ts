@@ -1,6 +1,6 @@
 import { supabase } from "~/utils/supabase-client";
 
-export const uploadFile = async (userId: string, content: string) => {
+export const uploadFile = async (userId: string, content: File) => {
     const { data, error } = await supabase.storage
         .from("avatars")
         .upload(`${userId}`, content, { upsert: true });
