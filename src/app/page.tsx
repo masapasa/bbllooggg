@@ -15,23 +15,28 @@ const Posts = () => {
     const utils = api.useContext();
 
     useEffect(() => {
-        const newPostsChannel = supabase
-            .channel("supabaseChangesChannel")
+        const channel = supabase
+            .channel("schema-db-changes")
             .on(
                 "postgres_changes",
                 {
-                    event: "INSERT",
+                    event: "*",
                     schema: "public",
-                    table: "posts",
                 },
-                (payload) => console.log(payload)
+                (payload) => {
+                    console.log(payload);
+                }
             )
-            .subscribe(() => {
-                void utils.post.getPosts.invalidate();
+            .subscribe((status) => {
+                console.log("MAM NOWY EVENT W SUBIE");
+                console.log(status);
+                if (status === "SUBSCRIBED") {
+                    void utils.post.getPosts.invalidate();
+                }
             });
 
         return () => {
-            void newPostsChannel.unsubscribe();
+            void channel.unsubscribe();
         };
     }, [utils]);
 
