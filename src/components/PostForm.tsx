@@ -26,7 +26,6 @@ export const PostForm = () => {
     const { mutateAsync, isLoading } = api.post.createPost.useMutation({
         onSuccess: () => {
             void utils.post.getPosts.invalidate();
-            void supabase.auth.refreshSession();
         },
         onError: () => {
             toast({

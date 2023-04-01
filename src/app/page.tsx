@@ -14,31 +14,52 @@ const Posts = () => {
     const { data, isLoading } = api.post.getPosts.useQuery();
     const utils = api.useContext();
 
-    useEffect(() => {
-        const channel = supabase
-            .channel("schema-db-changes")
-            .on(
-                "postgres_changes",
-                {
-                    event: "*",
-                    schema: "public",
-                },
-                (payload) => {
-                    console.log(payload);
-                }
-            )
-            .subscribe((status) => {
-                console.log("MAM NOWY EVENT W SUBIE");
-                console.log(status);
-                if (status === "SUBSCRIBED") {
-                    void utils.post.getPosts.invalidate();
-                }
-            });
+    // useEffect(() => {
+    //     supabase
+    //         .channel("public:posts")
+    //         .on(
+    //             "postgres_changes",
+    //             {
+    //                 schema: "public",
+    //                 table: "posts",
+    //                 event: "*",
+    //             },
+    //             (payload) => {
+    //                 console.log(payload.new);
+    //                 void utils.post.getPosts.invalidate();
+    //             }
+    //         )
+    //         .subscribe((status) => console.log(status));
 
-        return () => {
-            void channel.unsubscribe();
-        };
-    }, [utils]);
+    //     supabase
+    //         .channel("any")
+    //         .on("postgres_changes", { event: "*", schema: "*" }, (payload) => {
+    //             console.log("Change received!", payload);
+    //             void utils.post.getPosts.invalidate();
+    //         })
+    //         .subscribe();
+
+    //     return () => {
+    //         void supabase.channel("public:posts").unsubscribe();
+    //     };
+    // }, [utils]);
+
+    const channel = supabase
+        .channel("any")
+        .on(
+            "postgres_changes",
+            {
+                event: "*",
+                schema: "public",
+            },
+            (payload) => {
+                console.log(payload);
+                void utils.post.getPosts.invalidate();
+            }
+        )
+        .subscribe();
+
+    console.log(supabase.getChannels());
 
     const logOut = async () => {
         await supabase.auth.signOut();
