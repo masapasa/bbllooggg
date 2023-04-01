@@ -1,16 +1,39 @@
 "use client";
 
 import { Spinner, Text, Button } from "@chakra-ui/react";
+import React, { useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { PostForm } from "~/components/PostForm";
 import { PostList } from "~/components/PostList";
 import { WithPrivateRoute } from "~/components/withPrivateRoute";
 import { api } from "~/utils/api";
 import { supabase } from "~/utils/supabase-client";
+import { useEvent } from "./hook/useEvents";
 
 const Posts = () => {
     const { data, isLoading } = api.post.getPosts.useQuery();
+    const utils = api.useContext();
 
-    console.log(data);
+    useEffect(() => {
+        const newPostsChannel = supabase
+            .channel("supabaseChangesChannel")
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "posts",
+                },
+                (payload) => console.log(payload)
+            )
+            .subscribe(() => {
+                void utils.post.getPosts.invalidate();
+            });
+
+        return () => {
+            void newPostsChannel.unsubscribe();
+        };
+    }, [utils]);
 
     const logOut = async () => {
         await supabase.auth.signOut();
