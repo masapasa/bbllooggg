@@ -1,6 +1,7 @@
 "use client";
 
 import { Spinner, Text, Button } from "@chakra-ui/react";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import React, { useState } from "react";
 import { useCallback, useEffect, useMemo } from "react";
 import { PostForm } from "~/components/PostForm";
@@ -14,50 +15,19 @@ const Posts = () => {
     const { data, isLoading } = api.post.getPosts.useQuery();
     const utils = api.useContext();
 
-    // useEffect(() => {
-    //     supabase
-    //         .channel("public:posts")
-    //         .on(
-    //             "postgres_changes",
-    //             {
-    //                 schema: "public",
-    //                 table: "posts",
-    //                 event: "*",
-    //             },
-    //             (payload) => {
-    //                 console.log(payload.new);
-    //                 void utils.post.getPosts.invalidate();
-    //             }
-    //         )
-    //         .subscribe((status) => console.log(status));
-
-    //     supabase
-    //         .channel("any")
-    //         .on("postgres_changes", { event: "*", schema: "*" }, (payload) => {
-    //             console.log("Change received!", payload);
-    //             void utils.post.getPosts.invalidate();
-    //         })
-    //         .subscribe();
-
-    //     return () => {
-    //         void supabase.channel("public:posts").unsubscribe();
-    //     };
-    // }, [utils]);
-
-    const channel = supabase
-        .channel("any")
-        .on(
-            "postgres_changes",
-            {
-                event: "*",
-                schema: "public",
-            },
-            (payload) => {
-                console.log(payload);
+    useEffect(() => {
+        supabase
+            .channel("any")
+            .on("postgres_changes", { event: "*", schema: "*" }, (payload) => {
+                console.log("Change received!", payload);
                 void utils.post.getPosts.invalidate();
-            }
-        )
-        .subscribe();
+            })
+            .subscribe((status) => console.log(status));
+
+        return () => {
+            void supabase.removeChannel(supabase.channel("any"));
+        };
+    }, [utils]);
 
     console.log(supabase.getChannels());
 
