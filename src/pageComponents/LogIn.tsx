@@ -12,6 +12,8 @@ export function LogIn() {
             provider: "google",
         });
 
+        console.log("XDDD");
+
         console.log(data);
         console.log(error);
     }
