@@ -20,13 +20,13 @@ export function LogIn() {
         <Flex h={"100vh"} justifyContent={"center"} alignItems={"center"}>
             <Stack spacing={5} justifyContent="center">
                 <Text fontSize={"3xl"} align="center" w={450}>
-                    Log in with Github
+                    Log in with Google
                 </Text>
                 <Button
-                    colorScheme="blue"
+                    colorScheme="red"
                     onClick={() => void signInWithGoogle()}
                 >
-                    Github
+                    Google
                 </Button>
             </Stack>
         </Flex>

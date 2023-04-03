@@ -12,6 +12,7 @@ import { supabase } from "~/utils/supabase-client";
 
 const Posts = () => {
     const { data, isLoading } = api.post.getPosts.useQuery();
+    const utils = api.useContext();
 
     useEffect(() => {
         supabase
