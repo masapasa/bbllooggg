@@ -9,11 +9,9 @@ import { PostList } from "~/components/PostList";
 import { WithPrivateRoute } from "~/components/withPrivateRoute";
 import { api } from "~/utils/api";
 import { supabase } from "~/utils/supabase-client";
-import { useEvent } from "./hook/useEvents";
 
 const Posts = () => {
     const { data, isLoading } = api.post.getPosts.useQuery();
-    const utils = api.useContext();
 
     useEffect(() => {
         supabase

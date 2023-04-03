@@ -7,10 +7,13 @@ import { api } from "~/utils/api";
 import { supabase } from "~/utils/supabase-client";
 
 export function LogIn() {
-    async function signInWithGitHub() {
-        await supabase.auth.signInWithOAuth({
-            provider: "github",
+    async function signInWithGoogle() {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
         });
+
+        console.log(data);
+        console.log(error);
     }
 
     return (
@@ -21,7 +24,7 @@ export function LogIn() {
                 </Text>
                 <Button
                     colorScheme="blue"
-                    onClick={() => void signInWithGitHub()}
+                    onClick={() => void signInWithGoogle()}
                 >
                     Github
                 </Button>

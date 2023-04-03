@@ -11,11 +11,8 @@ import { api } from "../utils/api";
 import { supabase } from "~/utils/supabase-client";
 
 export const postValidationSchema = Yup.object({
-    title: Yup.string()
-        .required("Title field cannot be empty!")
-        .min(3)
-        .max(100),
-    content: Yup.string().required("Content field cannot be empty!").max(280),
+    title: Yup.string().required().min(3).max(100),
+    content: Yup.string().required().max(280),
 });
 
 type PostFormValues = Yup.InferType<typeof postValidationSchema>;

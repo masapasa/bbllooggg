@@ -55,6 +55,7 @@ export const getServiceSupabase = () =>
     );
 
 export const getUserAsAdmin = async (token: string) => {
+    console.log(`token:${token}`);
     const { data, error } = await getServiceSupabase().auth.getUser(token);
 
     if (error) {
@@ -66,6 +67,7 @@ export const getUserAsAdmin = async (token: string) => {
 
 export const createTRPCContext = async (_opts: CreateNextContextOptions) => {
     const req = _opts.req;
+    console.log(req.headers);
     const { user } = req.headers.authorization
         ? await getUserAsAdmin(req.headers.authorization)
         : { user: null };
