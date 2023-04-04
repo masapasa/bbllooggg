@@ -16,133 +16,136 @@ import { useRouter } from "next/navigation";
 import { supabase } from "~/utils/supabase-client";
 
 export const profileValidationSchema = Yup.object({
-    username: Yup.string().required().min(3).max(280),
+  username: Yup.string().required().min(3).max(280),
 });
 
 type ProfileFormValues = Yup.InferType<typeof profileValidationSchema>;
 
 const ProfileFormBase = () => {
-    const router = useRouter();
-    const userId = useUser().user?.id;
-    const utils = api.useContext();
-    const { mutateAsync, isLoading } = api.user.updateProfile.useMutation({
-        onSuccess: async () => {
-            await utils.user.getProfile.invalidate();
-            void router.push("/");
-        },
-        onError: () => {
-            openErrorToast();
-        },
+  const router = useRouter();
+  const userId = useUser().user?.id;
+  const utils = api.useContext();
+  const { mutateAsync, isLoading } = api.user.updateProfile.useMutation({
+    onSuccess: async () => {
+      await utils.user.getProfile.invalidate();
+      void router.push("/");
+    },
+    onError: () => {
+      openErrorToast();
+    },
+  });
+
+  const toast = useToast();
+
+  const openErrorToast = () => {
+    toast({ title: "Error setting up profile", status: "error" });
+  };
+
+  const [openFileSelector, { filesContent, plainFiles, errors }] =
+    useFilePicker({
+      readAs: "DataURL",
+      accept: "image/*",
+      multiple: false,
+      limitFilesConfig: { max: 1 },
+      maxFileSize: 50,
+      imageSizeRestrictions: {
+        maxHeight: 1000,
+        maxWidth: 1000,
+        minHeight: 200,
+        minWidth: 200,
+      },
     });
 
-    const toast = useToast();
+  const { control, handleSubmit } = useForm<ProfileFormValues>({
+    defaultValues: {
+      username: "",
+    },
+    resolver: yupResolver(profileValidationSchema),
+  });
 
-    const openErrorToast = () => {
-        toast({ title: "Error setting up profile", status: "error" });
-    };
+  console.log("errors", errors);
 
-    const [openFileSelector, { filesContent, plainFiles, errors }] =
-        useFilePicker({
-            readAs: "DataURL",
-            accept: "image/*",
-            multiple: false,
-            limitFilesConfig: { max: 1 },
-            maxFileSize: 50,
-            imageSizeRestrictions: {
-                maxHeight: 1000,
-                maxWidth: 1000,
-                minHeight: 200,
-                minWidth: 200,
-            },
-        });
+  const onSubmit = async (values: ProfileFormValues) => {
+    if (!userId) {
+      openErrorToast();
+      return;
+    }
 
-    const { control, handleSubmit } = useForm<ProfileFormValues>({
-        defaultValues: {
-            username: "",
-        },
-        resolver: yupResolver(profileValidationSchema),
-    });
+    let url = null;
 
-    console.log("errors", errors);
+    const file = plainFiles[0];
 
-    const onSubmit = async (values: ProfileFormValues) => {
-        if (!userId) {
-            openErrorToast();
-            return;
-        }
+    if (file) {
+      const { error, url: signedURL } = await uploadFile(userId, file);
 
-        let url = null;
+      if (error) {
+        openErrorToast();
+        return;
+      }
 
-        const file = plainFiles[0];
+      url = signedURL;
+    }
 
-        if (file) {
-            const { error, url: signedURL } = await uploadFile(userId, file);
+    void mutateAsync({ ...values, avatar_url: url ?? undefined });
+  };
 
-            if (error) {
-                openErrorToast();
-                return;
-            }
+  return (
+    <Stack spacing={8}>
+      <Text fontSize={"4xl"} align="center">
+        Set up your profile
+      </Text>
 
-            url = signedURL;
-        }
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSubmit(onSubmit)(e);
+        }}
+      >
+        <Stack spacing={4}>
+          <InputControl
+            control={control}
+            name="username"
+            label="username"
+            inputProps={{ placeholder: "username" }}
+          />
 
-        void mutateAsync({ ...values, avatar_url: url ?? undefined });
-    };
+          <Button onClick={() => openFileSelector()}>Upload avatar</Button>
 
-    return (
-        <Stack spacing={8}>
-            <Text fontSize={"4xl"} align="center">
-                Set up your profile
-            </Text>
-
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    void handleSubmit(onSubmit)(e);
-                }}
+          {filesContent.map((file, index) => (
+            <Stack
+              key={index}
+              w={"100%"}
+              border={"1px"}
+              borderRadius="8"
+              padding={4}
+              alignItems="center"
+              justifyContent={"center"}
+              spacing={4}
+              borderColor="gray.600"
             >
-                <Stack spacing={4}>
-                    <InputControl
-                        control={control}
-                        name="username"
-                        label="username"
-                        inputProps={{ placeholder: "username" }}
-                    />
+              <Text>choosed: {file.name}</Text>
+              <Image
+                alt={file.name}
+                src={file.content}
+                width={400}
+                height={400}
+              />
+              <br />
+            </Stack>
+          ))}
 
-                    <Button onClick={() => openFileSelector()}>
-                        Upload avatar
-                    </Button>
-
-                    {filesContent.map((file, index) => (
-                        <Stack
-                            key={index}
-                            w={"100%"}
-                            border={"1px"}
-                            borderRadius="8"
-                            padding={4}
-                            alignItems="center"
-                            justifyContent={"center"}
-                            spacing={4}
-                            borderColor="gray.600"
-                        >
-                            <Text>choosed: {file.name}</Text>
-                            <Image
-                                alt={file.name}
-                                src={file.content}
-                                width={400}
-                                height={400}
-                            />
-                            <br />
-                        </Stack>
-                    ))}
-
-                    <SubmitButton control={control} isLoading={isLoading}>
-                        submit
-                    </SubmitButton>
-                </Stack>
-            </form>
+          <SubmitButton control={control} isLoading={isLoading}>
+            submit
+          </SubmitButton>
+          {errors.length && (
+            <Text color={"red.300"} align="center">
+              Error occured, please choose different file.
+            </Text>
+          )}
         </Stack>
-    );
+      </form>
+    </Stack>
+  );
 };
 
 export const ProfileForm = WithPrivateRoute(ProfileFormBase);

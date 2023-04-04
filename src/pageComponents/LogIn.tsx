@@ -1,21 +1,18 @@
 import { Button, Center, Flex, Stack, Text } from "@chakra-ui/react";
 import { createClient } from "@supabase/supabase-js";
-import React from "react";
+import React, { useState } from "react";
 import { env } from "~/env.mjs";
 import { api } from "~/utils/api";
 
 import { supabase } from "~/utils/supabase-client";
 
 export function LogIn() {
+  const [error, setError] = useState<null | string>()
     async function signInWithGoogle() {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
         });
-
-        console.log("XDDD");
-
-        console.log(data);
-        console.log(error);
+        setError(error?.message)
     }
 
     return (
@@ -30,6 +27,7 @@ export function LogIn() {
                 >
                     Google
                 </Button>
+                {error && <Text color={"red.300"} align="center">{error}</Text>}
             </Stack>
         </Flex>
     );

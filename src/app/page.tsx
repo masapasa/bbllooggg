@@ -11,49 +11,46 @@ import { api } from "~/utils/api";
 import { supabase } from "~/utils/supabase-client";
 
 const Posts = () => {
-    const { data, isLoading } = api.post.getPosts.useQuery();
-    const utils = api.useContext();
+  const { data, isLoading } = api.post.getPosts.useQuery();
+  const utils = api.useContext();
 
-    useEffect(() => {
-        supabase
-            .channel("any")
-            .on("postgres_changes", { event: "*", schema: "*" }, (payload) => {
-                console.log("Change received!", payload);
-                void utils.post.getPosts.invalidate();
-            })
-            .subscribe((status) => console.log(status));
+  useEffect(() => {
+    const channel = supabase
+      .channel("any")
+      .on("postgres_changes",
+      { event: "*", schema: "public" },
+      (payload) => {
+        console.log("Change received!", payload);
+      })
+      .subscribe((status) => console.log(status));
+  }, []);
 
-        return () => {
-            void supabase.removeChannel(supabase.channel("any"));
-        };
-    }, [utils]);
+  console.log(supabase.getChannels());
 
-    console.log(supabase.getChannels());
+  const logOut = async () => {
+    await supabase.auth.signOut();
+  };
 
-    const logOut = async () => {
-        await supabase.auth.signOut();
-    };
+  return (
+    <>
+      <Button
+        onClick={() => void logOut()}
+        size={"xs"}
+        w={"100%"}
+        my={8}
+        variant={"link"}
+      >
+        Log Out
+      </Button>
+      <Text fontSize={"4xl"} align="center">
+        Create a post
+      </Text>
+      <PostForm />
 
-    return (
-        <>
-            <Button
-                onClick={() => void logOut()}
-                size={"xs"}
-                w={"100%"}
-                my={8}
-                variant={"link"}
-            >
-                Log Out
-            </Button>
-            <Text fontSize={"4xl"} align="center">
-                Create a post
-            </Text>
-            <PostForm />
-
-            {isLoading && <Spinner />}
-            {data && <PostList posts={data} />}
-        </>
-    );
+      {isLoading && <Spinner />}
+      {data && <PostList posts={data} />}
+    </>
+  );
 };
 
 export default WithPrivateRoute(Posts);
