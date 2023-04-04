@@ -11,46 +11,59 @@ import { api } from "~/utils/api";
 import { supabase } from "~/utils/supabase-client";
 
 const Posts = () => {
-  const { data, isLoading } = api.post.getPosts.useQuery();
-  const utils = api.useContext();
+    const { data, isLoading, refetch } = api.post.getPosts.useQuery(
+        {},
+        { refetchOnWindowFocus: false }
+    );
+    const utils = api.useContext();
 
-  useEffect(() => {
-    const channel = supabase
-      .channel("any")
-      .on("postgres_changes",
-      { event: "*", schema: "public" },
-      (payload) => {
-        console.log("Change received!", payload);
-      })
-      .subscribe((status) => console.log(status));
-  }, []);
+    useEffect(() => {
+        const channel = supabase
+            .channel("any")
+            .on(
+                "postgres_changes",
+                { event: "INSERT", schema: "public", table: "posts" },
+                (payload) => {
+                    console.log("Change received!", payload);
+                    void refetch();
+                }
+            )
+            .subscribe((status) => {
+                console.log(status);
+                void utils.post.getPosts.invalidate();
+            });
 
-  console.log(supabase.getChannels());
+        return () => {
+            void channel.unsubscribe();
+        };
+    }, []);
 
-  const logOut = async () => {
-    await supabase.auth.signOut();
-  };
+    console.log(supabase.getChannels());
 
-  return (
-    <>
-      <Button
-        onClick={() => void logOut()}
-        size={"xs"}
-        w={"100%"}
-        my={8}
-        variant={"link"}
-      >
-        Log Out
-      </Button>
-      <Text fontSize={"4xl"} align="center">
-        Create a post
-      </Text>
-      <PostForm />
+    const logOut = async () => {
+        await supabase.auth.signOut();
+    };
 
-      {isLoading && <Spinner />}
-      {data && <PostList posts={data} />}
-    </>
-  );
+    return (
+        <>
+            <Button
+                onClick={() => void logOut()}
+                size={"xs"}
+                w={"100%"}
+                my={8}
+                variant={"link"}
+            >
+                Log Out
+            </Button>
+            <Text fontSize={"4xl"} align="center">
+                Create a post
+            </Text>
+            <PostForm />
+
+            {isLoading && <Spinner />}
+            {data && <PostList posts={data} />}
+        </>
+    );
 };
 
 export default WithPrivateRoute(Posts);
